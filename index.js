@@ -8,7 +8,8 @@ const PORT = 8000;
 
 // CORS Configuration
 const corsOptions = {
-  origin: "https://taskify-frontend-beryl.vercel.app",
+  origin: "https://taskifyhimanshu.vercel.app",
+  // origin: "http://localhost:3000",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true,
   allowedHeaders: "Content-Type,Authorization",
