@@ -1,0 +1,32 @@
+[
+  {
+    "user_id": 1,
+    "name": "Himanshu",
+    "email": "abc@gmail.com",
+    "password": "1234"
+  },
+  {
+    "user_id": 2,
+    "name": "medha",
+    "email": "medha@gmail.com",
+    "password": "1234"
+  },
+  {
+    "user_id": 3,
+    "name": "Himanshu Prajapai",
+    "email": "email@gmail.com",
+    "password": "1234"
+  },
+  {
+    "user_id": 4,
+    "name": "Himanshu Prajapai",
+    "email": "rr@gmail.com",
+    "password": "1234"
+  },
+  {
+    "user_id": 5,
+    "name": "Rohit",
+    "email": "r@gmail.com",
+    "password": "1234"
+  }
+]

@@ -1,0 +1,130 @@
+[
+  {
+    "user_id": 1,
+    "tasks": [
+      {
+        "task_id": 1,
+        "task_name": "Complete today",
+        "task_description": "Fusce posuere felis sed lacus. Morbi sem mauris, laoreet ut, rhoncus aliquet, pulvinar sed, nisl. Nunc rhoncus dui vel sem. Sed sagittis.",
+        "due_date": "11/30/2022",
+        "priority": "Low",
+        "status": "Pending",
+        "category": "Work",
+        "estimated_time": 9.02,
+        "actual_time": 14.76,
+        "notes": "Suspendisse potenti. In eleifend quam a odio. In hac habitasse platea dictumst.\n\nMaecenas ut massa quis augue luctus tincidunt. Nulla mollis molestie lorem. Quisque ut erat.\n\nCurabitur gravida nisi at nibh. In hac habitasse platea dictumst. Aliquam augue quam, sollicitudin vitae, consectetuer eget, rutrum at, lorem.",
+        "created_at": "11/8/2022",
+        "updated_at": "1/27/2022",
+        "completed_at": "8/15/2022",
+        "assigned_to": "Trude Gregoriou",
+        "tags": "Pending"
+      },
+      {
+        "task_id": 2,
+        "task_name": "Submit report",
+        "task_description": "Submit the annual report to the manager.",
+        "due_date": "12/01/2022",
+        "priority": "High",
+        "status": "Completed",
+        "category": "Office",
+        "estimated_time": 5,
+        "actual_time": null,
+        "notes": "Need to finalize details before submission.",
+        "created_at": "11/10/2022",
+        "updated_at": "11/25/2022",
+        "completed_at": null,
+        "assigned_to": "Trude Gregoriou",
+        "tags": "Urgent"
+      },
+      {
+        "task_id": 1739214497428,
+        "task_name": "now its your turn",
+        "status": "Pending",
+        "task_description": "",
+        "due_date": "",
+        "priority": "Low",
+        "category": "",
+        "estimated_time": 0,
+        "actual_time": null,
+        "notes": "",
+        "created_at": "2025-02-10T19:08:17.428Z",
+        "updated_at": "2025-02-10T19:08:17.430Z",
+        "completed_at": null,
+        "assigned_to": "Self",
+        "tags": ""
+      }
+    ]
+  },
+  {
+    "user_id": 2,
+    "tasks": []
+  },
+  {
+    "id": null,
+    "user_id": 1,
+    "task": {
+      "task_id": 1739213720905,
+      "task_name": "hello",
+      "status": "Pending",
+      "task_description": "",
+      "due_date": "",
+      "priority": "Low",
+      "category": "",
+      "estimated_time": 0,
+      "actual_time": null,
+      "notes": "",
+      "created_at": "2025-02-10T18:55:20.905Z",
+      "updated_at": "2025-02-10T18:55:20.907Z",
+      "completed_at": null,
+      "assigned_to": "Self",
+      "tags": ""
+    }
+  },
+  {
+    "id": 1,
+    "user_id": 1,
+    "task": {
+      "task_id": 1739213728059,
+      "task_name": "hiiiiiii",
+      "status": "Pending",
+      "task_description": "",
+      "due_date": "",
+      "priority": "Low",
+      "category": "",
+      "estimated_time": 0,
+      "actual_time": null,
+      "notes": "",
+      "created_at": "2025-02-10T18:55:28.059Z",
+      "updated_at": "2025-02-10T18:55:28.059Z",
+      "completed_at": null,
+      "assigned_to": "Self",
+      "tags": ""
+    }
+  },
+  {
+    "user_id": 4,
+    "tasks": [
+      {
+        "task_id": 1739220669009,
+        "task_name": "watch movie",
+        "status": "Completed",
+        "task_description": "",
+        "due_date": "",
+        "priority": "Low",
+        "category": "",
+        "estimated_time": 0,
+        "actual_time": null,
+        "notes": "",
+        "created_at": "2025-02-10T20:51:09.009Z",
+        "updated_at": "2025-02-10T20:51:09.009Z",
+        "completed_at": null,
+        "assigned_to": "Self",
+        "tags": ""
+      }
+    ]
+  },
+  {
+    "user_id": 5,
+    "tasks": []
+  }
+]
