@@ -63,6 +63,13 @@ const TaskSchema = new mongoose.Schema({
 });
 const Task = mongoose.model("Task", TaskSchema);
 
+// api for status
+fetch(`https://taskify-1wt1.onrender.com/api/usersTasks/${userId}/${taskId}`, {
+  method: "PATCH",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ status: newStatus }),
+});
+
 // ✅ Signup API (Now with Hashed Password)
 app.post("/api/signup", async (req, res) => {
   try {
