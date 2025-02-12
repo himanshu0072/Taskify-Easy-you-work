@@ -1,44 +1,51 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const app = express();
 const PORT = 8000;
 
-// CORS Configuration
-const cors = require("cors");
-
+// ✅ CORS Configuration
 const corsOptions = {
   origin: "https://taskifyhimanshu.vercel.app",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
   credentials: true,
   allowedHeaders: "Content-Type,Authorization",
 };
-
 app.use(cors(corsOptions));
 app.options("*", cors()); // Allow preflight for all routes
 
-// MongoDB Configuration
-const mongoURI =
-  "mongodb+srv://himanshu0072:Himanshu@1234@cluster0.9ariqnh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+// ✅ Middleware
+app.use(express.json());
 
+// ✅ MongoDB Connection
 mongoose
-  .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((error) => console.error("MongoDB connection error:", error));
+  .connect(
+    "mongodb+srv://himanshu0072:Himanshu@1234@cluster0.9ariqnh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// Define User Schema
+// ✅ Define User Schema
 const UserSchema = new mongoose.Schema({
   name: String,
-  email: String,
-  password: String,
+  email: { type: String, unique: true },
+  password: String, // Stored as a **hashed** password
 });
-
 const User = mongoose.model("User", UserSchema);
 
-// Define Task Schema
+// ✅ Define Task Schema
 const TaskSchema = new mongoose.Schema({
-  user_id: mongoose.Schema.Types.ObjectId,
+  user_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   task_name: String,
   status: { type: String, default: "Pending" },
   task_description: String,
@@ -54,38 +61,12 @@ const TaskSchema = new mongoose.Schema({
   assigned_to: { type: String, default: "Self" },
   tags: String,
 });
-
 const Task = mongoose.model("Task", TaskSchema);
 
-// Login API
-app.post("/api/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
-    }
-
-    const user = await User.findOne({ email, password });
-
-    if (!user) {
-      return res.status(401).json({ error: "Invalid email or password" });
-    }
-
-    res.json({
-      success: true,
-      user: { user_id: user._id, name: user.name, email: user.email },
-    });
-  } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Signup API
+// ✅ Signup API (Now with Hashed Password)
 app.post("/api/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
     if (!name || !email || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
@@ -95,7 +76,8 @@ app.post("/api/signup", async (req, res) => {
       return res.status(400).json({ error: "Email already exists" });
     }
 
-    const newUser = new User({ name, email, password });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ name, email, password: hashedPassword });
     await newUser.save();
 
     res.json({
@@ -109,16 +91,39 @@ app.post("/api/signup", async (req, res) => {
   }
 });
 
-// Fetch User Tasks API
+// ✅ Login API (Now with Hashed Password Verification)
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    res.json({
+      success: true,
+      user: { user_id: user._id, name: user.name, email: user.email },
+    });
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ✅ Fetch User Tasks API
 app.get("/api/usersTasks/:user_id", async (req, res) => {
   try {
     const { user_id } = req.params;
-
     const tasks = await Task.find({ user_id });
-
-    if (!tasks.length) {
-      return res.status(404).json({ error: "No tasks found for this user." });
-    }
 
     res.json({ tasks });
   } catch (error) {
@@ -127,7 +132,7 @@ app.get("/api/usersTasks/:user_id", async (req, res) => {
   }
 });
 
-// Add New Task API
+// ✅ Add New Task API
 app.post("/api/usersTasks/:user_id", async (req, res) => {
   try {
     const { user_id } = req.params;
@@ -137,11 +142,7 @@ app.post("/api/usersTasks/:user_id", async (req, res) => {
       return res.status(400).json({ error: "Task name is required" });
     }
 
-    const newTask = new Task({
-      user_id,
-      task_name,
-    });
-
+    const newTask = new Task({ user_id, task_name });
     await newTask.save();
 
     res.json({
@@ -155,12 +156,12 @@ app.post("/api/usersTasks/:user_id", async (req, res) => {
   }
 });
 
-// Delete Task API
+// ✅ Delete Task API (Now Ensuring Correct `user_id`)
 app.delete("/api/usersTasks/:user_id/:taskId", async (req, res) => {
   try {
-    const { taskId } = req.params;
+    const { user_id, taskId } = req.params;
 
-    const deletedTask = await Task.findByIdAndDelete(taskId);
+    const deletedTask = await Task.findOneAndDelete({ _id: taskId, user_id });
 
     if (!deletedTask) {
       return res.status(404).json({ error: "Task not found." });
@@ -173,15 +174,15 @@ app.delete("/api/usersTasks/:user_id/:taskId", async (req, res) => {
   }
 });
 
-// Update Task API (Mark as Completed or Edit Task)
+// ✅ Update Task API (More Secure and Flexible)
 app.patch("/api/usersTasks/:user_id/:taskId", async (req, res) => {
   try {
-    const { taskId } = req.params;
-    const { task_name, status } = req.body;
+    const { user_id, taskId } = req.params;
+    const updateData = { ...req.body, updated_at: new Date() };
 
-    const updatedTask = await Task.findByIdAndUpdate(
-      taskId,
-      { task_name, status, updated_at: new Date() },
+    const updatedTask = await Task.findOneAndUpdate(
+      { _id: taskId, user_id },
+      updateData,
       { new: true }
     );
 
@@ -200,7 +201,7 @@ app.patch("/api/usersTasks/:user_id/:taskId", async (req, res) => {
   }
 });
 
-// Start Server
+// ✅ Start Server
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
