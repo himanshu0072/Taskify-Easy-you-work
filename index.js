@@ -22,7 +22,7 @@ app.use(express.json());
 // ✅ MongoDB Connection
 mongoose
   .connect(
-    "mongodb+srv://himanshu0072:Himanshu@1234@cluster0.9ariqnh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+    "mongodb+srv://himanshu0072:hima@cluster0.9ariqnh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
     {
       useNewUrlParser: true,
       useUnifiedTopology: true,
