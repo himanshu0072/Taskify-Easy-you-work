@@ -6,15 +6,17 @@ const app = express();
 const PORT = 8000;
 
 // CORS Configuration
+const cors = require("cors");
+
 const corsOptions = {
   origin: "https://taskifyhimanshu.vercel.app",
-  // origin: "http://localhost:3000",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
   credentials: true,
   allowedHeaders: "Content-Type,Authorization",
 };
+
 app.use(cors(corsOptions));
-app.use(express.json());
+app.options("*", cors()); // Allow preflight for all routes
 
 // MongoDB Configuration
 const mongoURI =
