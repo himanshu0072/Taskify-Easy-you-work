@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const fs = require("fs");
-const path = require("path");
+const mongoose = require("mongoose");
 
 const app = express();
 const PORT = 8000;
@@ -17,93 +16,109 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// File Paths
-const usersFile = path.join(__dirname, "data", "users.json"); // Updated path
-const tasksFile = path.join(__dirname, "data", "UsersTasks.json"); // Updated path
+// MongoDB Configuration
+const mongoURI =
+  "mongodb+srv://himanshu0072:Himanshu@1234@cluster0.9ariqnh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
-// Ensure data directory exists
-const dataDir = path.join(__dirname, "data");
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir);
-}
+mongoose
+  .connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((error) => console.error("MongoDB connection error:", error));
 
-// Load Users
-const loadUsers = () => {
-  try {
-    if (fs.existsSync(usersFile)) {
-      const data = fs.readFileSync(usersFile, "utf8").trim();
-      return data ? JSON.parse(data) : [];
-    }
-  } catch (error) {
-    console.error("Error loading users:", error);
-  }
-  return [];
-};
+// Define User Schema
+const UserSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  password: String,
+});
 
-// Load Tasks
-const loadTasks = () => {
-  try {
-    if (fs.existsSync(tasksFile)) {
-      const data = fs.readFileSync(tasksFile, "utf8").trim();
-      return data ? JSON.parse(data) : [];
-    }
-  } catch (error) {
-    console.error("Error loading tasks:", error);
-  }
-  return [];
-};
+const User = mongoose.model("User", UserSchema);
 
-// Save Tasks
-const saveTasks = (tasks) => {
-  try {
-    fs.writeFileSync(tasksFile, JSON.stringify(tasks, null, 2), "utf8");
-  } catch (error) {
-    console.error("Error saving tasks:", error);
-  }
-};
+// Define Task Schema
+const TaskSchema = new mongoose.Schema({
+  user_id: mongoose.Schema.Types.ObjectId,
+  task_name: String,
+  status: { type: String, default: "Pending" },
+  task_description: String,
+  due_date: String,
+  priority: { type: String, default: "Low" },
+  category: String,
+  estimated_time: Number,
+  actual_time: Number,
+  notes: String,
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date, default: Date.now },
+  completed_at: Date,
+  assigned_to: { type: String, default: "Self" },
+  tags: String,
+});
+
+const Task = mongoose.model("Task", TaskSchema);
 
 // Login API
-app.post("/api/login", (req, res) => {
+app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const users = loadUsers();
-    const user = users.find(
-      (u) => u.email === email && u.password === password
-    );
+    const user = await User.findOne({ email, password });
 
     if (!user) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
-    // Return user data without password
-    const { password: _, ...userData } = user;
-    res.json({ success: true, user: userData });
+    res.json({
+      success: true,
+      user: { user_id: user._id, name: user.name, email: user.email },
+    });
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// Fetch User Tasks API
-app.get("/api/usersTasks/:user_id", (req, res) => {
+// Signup API
+app.post("/api/signup", async (req, res) => {
   try {
-    const userId = req.params.user_id;
-    if (!userId) {
-      return res.status(400).json({ error: "Invalid user ID" });
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: "All fields are required" });
     }
 
-    const tasks = loadTasks();
-    const userTasks = tasks.find((user) => user.user_id === parseInt(userId));
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "Email already exists" });
+    }
 
-    if (!userTasks) {
+    const newUser = new User({ name, email, password });
+    await newUser.save();
+
+    res.json({
+      success: true,
+      message: "User created successfully",
+      user_id: newUser._id,
+    });
+  } catch (error) {
+    console.error("Signup error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Fetch User Tasks API
+app.get("/api/usersTasks/:user_id", async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    const tasks = await Task.find({ user_id });
+
+    if (!tasks.length) {
       return res.status(404).json({ error: "No tasks found for this user." });
     }
 
-    res.json({ tasks: userTasks.tasks });
+    res.json({ tasks });
   } catch (error) {
     console.error("Error fetching tasks:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -111,42 +126,21 @@ app.get("/api/usersTasks/:user_id", (req, res) => {
 });
 
 // Add New Task API
-app.post("/api/usersTasks/:user_id", (req, res) => {
+app.post("/api/usersTasks/:user_id", async (req, res) => {
   try {
     const { user_id } = req.params;
     const { task_name } = req.body;
 
-    if (!user_id || !task_name) {
-      return res.status(400).json({ error: "Missing user_id or task_name" });
+    if (!task_name) {
+      return res.status(400).json({ error: "Task name is required" });
     }
 
-    const tasks = loadTasks();
-    const userTasks = tasks.find((user) => user.user_id === parseInt(user_id));
-
-    if (!userTasks) {
-      return res.status(404).json({ error: "User not found." });
-    }
-
-    const newTask = {
-      task_id: Date.now(),
+    const newTask = new Task({
+      user_id,
       task_name,
-      status: "Pending",
-      task_description: "",
-      due_date: "",
-      priority: "Low",
-      category: "",
-      estimated_time: 0,
-      actual_time: null,
-      notes: "",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      completed_at: null,
-      assigned_to: "Self",
-      tags: "",
-    };
+    });
 
-    userTasks.tasks.push(newTask);
-    saveTasks(tasks);
+    await newTask.save();
 
     res.json({
       success: true,
@@ -160,27 +154,15 @@ app.post("/api/usersTasks/:user_id", (req, res) => {
 });
 
 // Delete Task API
-app.delete("/api/usersTasks/:user_id/:taskId", (req, res) => {
+app.delete("/api/usersTasks/:user_id/:taskId", async (req, res) => {
   try {
-    const { user_id, taskId } = req.params;
-    const tasks = loadTasks();
+    const { taskId } = req.params;
 
-    const userTasks = tasks.find((user) => user.user_id === parseInt(user_id));
+    const deletedTask = await Task.findByIdAndDelete(taskId);
 
-    if (!userTasks) {
-      return res.status(404).json({ error: "User not found." });
-    }
-
-    const taskIndex = userTasks.tasks.findIndex(
-      (task) => task.task_id === parseInt(taskId)
-    );
-
-    if (taskIndex === -1) {
+    if (!deletedTask) {
       return res.status(404).json({ error: "Task not found." });
     }
-
-    userTasks.tasks.splice(taskIndex, 1);
-    saveTasks(tasks);
 
     res.json({ success: true, message: "Task deleted successfully" });
   } catch (error) {
@@ -190,86 +172,28 @@ app.delete("/api/usersTasks/:user_id/:taskId", (req, res) => {
 });
 
 // Update Task API (Mark as Completed or Edit Task)
-app.patch("/api/usersTasks/:user_id/:taskId", (req, res) => {
+app.patch("/api/usersTasks/:user_id/:taskId", async (req, res) => {
   try {
-    const { user_id, taskId } = req.params;
+    const { taskId } = req.params;
     const { task_name, status } = req.body;
-    const tasks = loadTasks();
 
-    const userTasks = tasks.find((user) => user.user_id === parseInt(user_id));
-
-    if (!userTasks) {
-      return res.status(404).json({ error: "User not found." });
-    }
-
-    const task = userTasks.tasks.find(
-      (task) => task.task_id === parseInt(taskId)
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { task_name, status, updated_at: new Date() },
+      { new: true }
     );
 
-    if (!task) {
+    if (!updatedTask) {
       return res.status(404).json({ error: "Task not found." });
     }
 
-    if (task_name) task.task_name = task_name;
-    if (status) task.status = status;
-
-    saveTasks(tasks);
     res.json({
       success: true,
       message: "Task updated successfully",
-      task,
+      task: updatedTask,
     });
   } catch (error) {
     console.error("Error updating task:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Signup API
-app.post("/api/signup", (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    // Validate input
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: "All fields are required" });
-    }
-
-    // Load existing users
-    const users = loadUsers();
-
-    // Check if email already exists
-    if (users.some((user) => user.email === email)) {
-      return res.status(400).json({ error: "Email already exists" });
-    }
-
-    // Create new user
-    const newUser = {
-      user_id: users.length ? users[users.length - 1].user_id + 1 : 1,
-      name,
-      email,
-      password,
-    };
-
-    // Update users.json
-    users.push(newUser);
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-
-    // Update UsersTasks.json
-    const usersTasks = loadTasks();
-    usersTasks.push({
-      user_id: newUser.user_id,
-      tasks: [],
-    });
-    fs.writeFileSync(tasksFile, JSON.stringify(usersTasks, null, 2));
-
-    res.json({
-      success: true,
-      message: "User created successfully",
-      user_id: newUser.user_id,
-    });
-  } catch (error) {
-    console.error("Signup error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
